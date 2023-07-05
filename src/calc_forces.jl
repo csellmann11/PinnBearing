@@ -70,7 +70,6 @@ function forces_dl(prob::PDE_Prob,state_vector)
     model(inputs,ps,st)
 
     @. prob.H = 1 + E*prob.cosX + eps_ * 1/2 * prob.Y * cos(prob.X - alpha_WL)
-    println("minimum H", minimum(prob.H))
     
     prob.pressure .= reshape(model.output,prob.nx,prob.ny)
 

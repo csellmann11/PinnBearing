@@ -4,7 +4,7 @@ using .PinnBearing, Plots
 
 
 plotly()
-nx = 60; ny = 30;
+nx = 80; ny = 30;
 
 reduced_dim = 64
 b_hidden, b_depth = 64, 4
@@ -20,8 +20,8 @@ prob = PinnBearing.PDE_Prob(nx,ny,bearing,branch_nets,trunc_net,"models/model_pa
 
 
 
-Dm = 0.9                           
-omega = 600 * 2 * pi; state_vec = [0.5 * bearing.c,0.0,1.0,0,0,0.0,20.0,10.0];
+Dm = 0.0                           
+omega = 600 * 2 * pi; state_vec = [0.5 * bearing.c,0.0,0.0,0,0,0.0,0.0,0.0];
 e = sqrt(state_vec[1]^2 + state_vec[2]^2)/bearing.c
 
 alpha = state_vec[5]
@@ -36,7 +36,8 @@ fx,fy = PinnBearing.forces_dl(prob,state_vec)
 println("fx: ",fx," fy: ",fy)
 
 
-(fxr,fyr),init_prob = PinnBearing.bearing_pressure(state_vec,prob)
+@time (fxr,fyr) = PinnBearing.bearing_pressure(state_vec,prob)
+@time (fxr,fyr) = PinnBearing.bearing_pressure(state_vec,prob)
 
 println("fx: ",fxr," fy: ",fyr)
 

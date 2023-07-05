@@ -23,7 +23,7 @@ function spaltfunc(state_vec,pde_prob)
     return H[1:end-1,:],HD[1:end-1,:],dHdX[1:end-1,:],dHdY[1:end-1,:],d2HdX2[1:end-1,:]
 
 end
-function bearing_pressure(state_vec,pde_prob,dec = nothing)
+function bearing_pressure(state_vec,pde_prob)
 
     T = Float64
     bearing = pde_prob.bearing
@@ -38,7 +38,6 @@ function bearing_pressure(state_vec,pde_prob,dec = nothing)
     ny = pde_prob.ny
     dx ::Float64 = pde_prob.dx
     dy ::Float64 = pde_prob.dy
-    println("bearing width = $(bearing.B)")
 
     um = D/4 * om
 
@@ -56,13 +55,7 @@ function bearing_pressure(state_vec,pde_prob,dec = nothing)
     fillMatrix!(val,row,col, ny, nx, rhs, dx, dy, H, dHdX,dHdY,d2Hdx2, HD, sign(um));
     A = sparse(row,col,val);
 
-    if dec === nothing
-        dec = lu(A)
-    else
-        dec = lu!(dec,A)
-    end
-    p_vec = dec\rhs
-  
+    p_vec = klu(A)\rhs
     p_vec = p_vec ./ reshape(H[:,2:end-1],:,1).^2
 
     P = zeros(T,nx+1,ny)
@@ -87,6 +80,6 @@ function bearing_pressure(state_vec,pde_prob,dec = nothing)
     fx = trapz((pde_prob.x,pde_prob.y),cos.(X) .* P)/p_fak * (D/2)^2 *bearing.B/2;
     fy = trapz((pde_prob.x,pde_prob.y),sin.(X) .* P)/p_fak * (D/2)^2 *bearing.B/2;
 
-    return [fx,fy],dec
+    return [fx,fy]
 
 end
