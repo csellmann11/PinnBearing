@@ -1,4 +1,4 @@
-using LinearSolve, SparseArrays, Trapz
+using SparseArrays, Trapz
 include("fill_mat.jl")
 
 function spaltfunc(state_vec,pde_prob)
@@ -11,19 +11,19 @@ function spaltfunc(state_vec,pde_prob)
     phi_ = (dy*x -y * dx) / (x^2 + y^2)
     E_   = (dy*y + x * dx) / sqrt(x^2 + y^2)/ bearing.c
 
-    Θ = prob.X .- phi
-    H  ::Matrix{Float64}  = @. 1 .+ E * cos.(Θ) + 1/2 * eps_ * prob.Y .* cos(Θ - alpha_WL)
-    dHdX::Matrix{Float64} = @. - E * sin.(Θ)  - 1/2 * eps_ * prob.Y .* sin.(Θ - alpha_WL)
-    dHdY::Matrix{Float64} = @. eps_ * prob.Y .* cos(Θ - alpha_WL) # 1/2 is missing because the true y is in (0,1)
-    d2HdX2::Matrix{Float64} = @. - E * cos.(Θ) - 1/2 * eps_ * prob.Y .* cos(Θ - alpha_WL)
+    Θ = pde_prob.X .- phi
+    H  ::Matrix{Float64}  = @. 1 .+ E * cos.(Θ) + 1/2 * eps_ * pde_prob.Y .* cos(Θ - alpha_WL)
+    dHdX::Matrix{Float64} = @. - E * sin.(Θ)  - 1/2 * eps_ * pde_prob.Y .* sin.(Θ - alpha_WL)
+    dHdY::Matrix{Float64} = @. eps_ * pde_prob.Y .* cos(Θ - alpha_WL) # 1/2 is missing because the true y is in (0,1)
+    d2HdX2::Matrix{Float64} = @. - E * cos.(Θ) - 1/2 * eps_ * pde_prob.Y .* cos(Θ - alpha_WL)
 
-    HD ::Matrix{Float64} = @. E_ * cos.(Θ) + E * phi_ * sin.(Θ) + 1/2 * eps_dot * prob.Y .* cos(Θ - alpha_WL) + 1/2 * eps_ * prob.Y .* alpha_WL_dot .* sin.(Θ - alpha_WL)
+    HD ::Matrix{Float64} = @. E_ * cos.(Θ) + E * phi_ * sin.(Θ) + 1/2 * eps_dot * pde_prob.Y .* cos(Θ - alpha_WL) + 1/2 * eps_ * pde_prob.Y .* alpha_WL_dot .* sin.(Θ - alpha_WL)
 
     HD = HD * bearing.d/2 * 1/um
     return H[1:end-1,:],HD[1:end-1,:],dHdX[1:end-1,:],dHdY[1:end-1,:],d2HdX2[1:end-1,:]
 
 end
-function bearing_pressure(state_vec,pde_prob,init_prob = nothing)
+function bearing_pressure(state_vec,pde_prob,dec = nothing)
 
     T = Float64
     bearing = pde_prob.bearing
@@ -56,15 +56,14 @@ function bearing_pressure(state_vec,pde_prob,init_prob = nothing)
     fillMatrix!(val,row,col, ny, nx, rhs, dx, dy, H, dHdX,dHdY,d2Hdx2, HD, sign(um));
     A = sparse(row,col,val);
 
-    if init_prob === nothing
-        init_prob = init(LinearProblem(A,rhs))
+    if dec === nothing
+        dec = lu(A)
     else
-        init_prob.A = A
-        init_prob.b = rhs
+        dec = lu!(dec,A)
     end
-    sol = solve(init_prob)
+    p_vec = dec\rhs
   
-    p_vec = sol.u ./ reshape(H[:,2:end-1],:,1).^2
+    p_vec = p_vec ./ reshape(H[:,2:end-1],:,1).^2
 
     P = zeros(T,nx+1,ny)
     for i ∈ eachindex(p_vec)
@@ -88,6 +87,6 @@ function bearing_pressure(state_vec,pde_prob,init_prob = nothing)
     fx = trapz((pde_prob.x,pde_prob.y),cos.(X) .* P)/p_fak * (D/2)^2 *bearing.B/2;
     fy = trapz((pde_prob.x,pde_prob.y),sin.(X) .* P)/p_fak * (D/2)^2 *bearing.B/2;
 
-    return [fx,fy],init_prob
+    return [fx,fy],dec
 
 end

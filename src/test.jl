@@ -2,7 +2,6 @@ include("PinnBearing.jl")
 using MKL
 using .PinnBearing, Plots
 
-include("Physics/pressureFDM.jl")
 
 plotly()
 nx = 60; ny = 30;
@@ -37,7 +36,7 @@ fx,fy = PinnBearing.forces_dl(prob,state_vec)
 println("fx: ",fx," fy: ",fy)
 
 
-(fxr,fyr),init_prob = bearing_pressure(state_vec,prob)
+(fxr,fyr),init_prob = PinnBearing.bearing_pressure(state_vec,prob)
 
 println("fx: ",fxr," fy: ",fyr)
 
