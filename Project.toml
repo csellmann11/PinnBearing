@@ -1,7 +1,7 @@
 name = "PinnBearing"
 uuid = "2929cc70-2580-4a6d-a24a-27609cbc93e3"
 authors = ["csellmann11 <csellmann11@gmail.com>"]
-version = "0.1.0"
+version = "1.1.0"
 
 [deps]
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
