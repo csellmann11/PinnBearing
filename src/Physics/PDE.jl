@@ -1,5 +1,10 @@
+
+abstract type AbstractPdeProblem end 
+abstract type AbstractDNetPdeProblem <: AbstractPdeProblem end
+
+
 include("load_file.jl")
-struct PDE_Prob
+struct DNetPdeProblem <: AbstractDNetPdeProblem
     nx :: Int
     ny :: Int
     dx :: Float32
@@ -23,10 +28,10 @@ struct PDE_Prob
     model_state ::NamedTuple
 end
 
-function PDE_Prob(nx::Int,ny::Int,bearing::HD_Bearing,branch_networks_info,trunc_network_info,
+function DNetPdeProblem(nx::Int,ny::Int,bearing::HD_Bearing,arc_vec,
     params_file)
     dx :: Float32 = 2pi/(nx-1)
-    dy :: Float32 = bearing.B/(ny-1)
+    dy :: Float32 = 1/(ny-1)
 
     x = collect(LinRange(0,2pi,nx)) .|> Float32
     y = collect(LinRange(-1,1,ny)) .|> Float32
@@ -41,6 +46,18 @@ function PDE_Prob(nx::Int,ny::Int,bearing::HD_Bearing,branch_networks_info,trunc
 
     y_data = reshape(Y,1,nx*ny); x_data = reshape(X,1,nx*ny)
 
+    b_hidden, b_depth = arc_vec[1], arc_vec[2]
+    t_hidden, t_depth = arc_vec[3], arc_vec[4]
+    reduced_dim = arc_vec[5]
+
+    println("b_hidden: ",b_hidden," b_depth: ",b_depth," t_hidden: ",t_hidden," t_depth: ",t_depth," reduced_dim: ",reduced_dim)
+
+    branch_networks_info = [[1,reduced_dim,b_depth,b_hidden],[1,reduced_dim,b_depth,b_hidden]
+            ,[2,reduced_dim,b_depth,b_hidden],[1,reduced_dim,b_depth,b_hidden],
+            [2,reduced_dim,b_depth,b_hidden],[2,reduced_dim,b_depth,b_hidden],[1,reduced_dim,b_depth,b_hidden]]
+
+    trunc_network_info = [3,reduced_dim,t_depth,t_hidden]
+
     model = DeepONet(branch_networks_info,trunc_network_info,y_data)
     model.flags.training = false
     rng = MersenneTwister(1234)
@@ -54,6 +71,40 @@ function PDE_Prob(nx::Int,ny::Int,bearing::HD_Bearing,branch_networks_info,trunc
     OpenHDF5(params_file,ps)
     model(input,ps,st)
 
-    PDE_Prob(nx,ny,dx,dy,x,y,X,Y,H,cosX,sinX,pressure,bearing,model,ps,st)
+    DNetPdeProblem(nx,ny,dx,dy,x,y,X,Y,H,cosX,sinX,pressure,bearing,model,ps,st)
+end
+
+
+struct PdeProb <: AbstractPdeProblem
+    nx :: Int
+    ny :: Int
+    dx :: Float32
+    dy :: Float32
+    
+    x :: Array{Float32}
+    y :: Array{Float32}
+    X :: Array{Float32}
+    Y :: Array{Float32}
+
+    cosX :: Array{Float32}
+    sinX :: Array{Float32}
+    
+    bearing  :: HD_Bearing
+end
+
+function PdeProb(nx::Int,ny::Int,bearing::HD_Bearing)
+    dx :: Float32 = 2pi/(nx-1)
+    #dy :: Float32 = bearing.B/(ny-1)
+    dy :: Float32 = 1/(ny-1)
+
+    x = collect(LinRange(0,2pi,nx)) .|> Float32
+    y = collect(LinRange(-1,1,ny)) .|> Float32
+    
+    X = [xv for xv in x, _ in y]
+    Y = [yv for _ in x, yv in y]
+
+    cosX = cos.(X); sinX = sin.(X)
+
+    PdeProb(nx,ny,dx,dy,x,y,X,Y,cosX,sinX,bearing)
 end
 

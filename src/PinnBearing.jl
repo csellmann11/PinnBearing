@@ -2,13 +2,13 @@ module PinnBearing
     using MKL, Lux, Trapz, Plots, LoopVectorization, LinearAlgebra
     using KLU
     include("DeepONet/DeepONet.jl")
-    include("Physics/bearing.jl")
+    include("Physics/Bearing_comp/bearing.jl")
     include("Physics/PDE.jl")
     include("calc_forces.jl")
-    include("Physics/pressureFDM.jl")
+    include("Physics/Bearing_comp/pressureFDM.jl")
 
     export HD_Bearing_Pfeil, HD_Bearing, HD_Bearing_Schweizer
-    export PDE_Prob, forces_dl
+    export DNetPdeProblem, PdeProb, forces_dl
     export DeepONet, FFCN
     export bearing_pressure
 end 

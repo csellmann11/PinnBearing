@@ -9,6 +9,7 @@ mutable struct HD_Bearing
 
     c       :: Float32
     B       :: Float32
+    alpha   :: Float32
 end
 
 function HD_Bearing_Pfeil(;d = 0.1,b = 0.1,psi = 3.58e-03,om = 100,eta = 0.01)
@@ -18,7 +19,9 @@ function HD_Bearing_Pfeil(;d = 0.1,b = 0.1,psi = 3.58e-03,om = 100,eta = 0.01)
     circ = 2pi*rI
     B = b / rI
 
-    HD_Bearing(d,b,psi,rI,om,eta,circ,c,B)
+    alpha = 1/B^2
+
+    HD_Bearing(d,b,psi,rI,om,eta,circ,c,B,alpha)
 end
 
 function HD_Bearing_Schweizer(;d = 18e-03,b = 10e-03,psi = 3.58e-03,om = 100,eta = 6.4e-03)
@@ -27,6 +30,7 @@ function HD_Bearing_Schweizer(;d = 18e-03,b = 10e-03,psi = 3.58e-03,om = 100,eta
     circ = 2pi*rI
     B = b / rI
     c = psi * rI
+    alpha = 1/B^2
 
-    HD_Bearing(d,b,psi,rI,om,eta,circ,c,B)
+    HD_Bearing(d,b,psi,rI,om,eta,circ,c,B,alpha)
 end

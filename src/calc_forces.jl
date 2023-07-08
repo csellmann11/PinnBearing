@@ -1,4 +1,44 @@
-function process_input(prob::PDE_Prob,state_vector)
+
+"""
+    _process_input(prob::PDE_Prob,state_vector)
+
+# Warning: 
+- This function is only for testing purposes.
+Use `process_input` instead.
+
+"""
+function _process_input(prob::DNetPdeProblem,state_vector)
+    bearing = prob.bearing
+
+    ω = bearing.om |> Float32
+    
+    E,A1,ϕ01,D_m,alpha_WL,ϕ23 = state_vector .|> Float32
+    u_m = bearing.rI * ω/2
+    Φ = 0.0
+
+    eps_max = 2 * (sqrt(1 - E^2 * sin(alpha_WL)^2) - E * abs(cos(alpha_WL)))
+    eps_ = D_m * eps_max
+
+    #######################
+
+    alpha_WL_in :: Vector{Float32}  = [cos(alpha_WL),sin(alpha_WL)]
+    ϕ01_in :: Vector{Float32}       = [cos(ϕ01),sin(ϕ01)]
+    ϕ23_in :: Vector{Float32}       = [cos(ϕ23),sin(ϕ23)]
+
+    λ::Float32 = 1.0
+    
+    in1,in2,in3,in4,in5,in6 = [2*E-1], [2*A1 - 1], ϕ01_in,[2*D_m - 1],alpha_WL_in,ϕ23_in
+    width = bearing.B; width_in = [2/3 * (width - 2.5)] .|> Float32
+
+    inputs::Vector{Union{Vector{Float32},Float32,Nothing}} = [nothing,in1,in2,in3,in4,in5,in6, width_in]
+
+    p_fak = λ* bearing.eta * u_m * bearing.rI^2/
+        (bearing.c^2) * bearing.b/2
+
+    return inputs, E, eps_ , Φ, p_fak, alpha_WL
+end
+
+function process_input(prob::DNetPdeProblem,state_vector)
     bearing = prob.bearing
 
     ω = bearing.om |> Float32
@@ -62,10 +102,14 @@ Calculate the forces acting on the bearing.
 - `fx`: The force in x direction
 - `fy`: The force in y direction
 """
-function forces_dl(prob::PDE_Prob,state_vector)
+function forces_dl(prob::DNetPdeProblem,state_vector; Benchmark = false)
     model, ps, st = prob.model, prob.model_pars, prob. model_state
 
-    inputs, E,eps_, Φ, p_fak , alpha_WL = process_input(prob,state_vector)
+    if Benchmark == false
+        inputs, E,eps_, Φ, p_fak , alpha_WL = process_input(prob,state_vector)
+    else
+        inputs, E,eps_, Φ, p_fak , alpha_WL = _process_input(prob,state_vector)
+    end
 
     model(inputs,ps,st)
 
