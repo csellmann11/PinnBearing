@@ -75,7 +75,7 @@ function DNetPdeProblem(nx::Int,ny::Int,bearing::HD_Bearing,arc_vec,
 end
 
 
-struct PdeProb <: AbstractPdeProblem
+struct PdeProblem <: AbstractPdeProblem
     nx :: Int
     ny :: Int
     dx :: Float32
@@ -92,7 +92,7 @@ struct PdeProb <: AbstractPdeProblem
     bearing  :: HD_Bearing
 end
 
-function PdeProb(nx::Int,ny::Int,bearing::HD_Bearing)
+function PdeProblem(nx::Int,ny::Int,bearing::HD_Bearing)
     dx :: Float32 = 2pi/(nx-1)
     #dy :: Float32 = bearing.B/(ny-1)
     dy :: Float32 = 1/(ny-1)
@@ -105,6 +105,6 @@ function PdeProb(nx::Int,ny::Int,bearing::HD_Bearing)
 
     cosX = cos.(X); sinX = sin.(X)
 
-    PdeProb(nx,ny,dx,dy,x,y,X,Y,cosX,sinX,bearing)
+    PdeProblem(nx,ny,dx,dy,x,y,X,Y,cosX,sinX,bearing)
 end
 

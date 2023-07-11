@@ -55,7 +55,7 @@ Calculate the forces in the bearing with FDM.
 - `fx`: The force in x-direction
 - `fy`: The force in y-direction
 """
-function bearing_pressure(state_vec,pde_prob::AbstractPdeProblem)
+function bearing_pressure(state_vec,pde_prob::AbstractPdeProblem; pressure_ret = false)
 
     T = Float64
     bearing = pde_prob.bearing
@@ -119,8 +119,12 @@ function bearing_pressure(state_vec,pde_prob::AbstractPdeProblem)
     P[nx+1,:] = P[1,:];
 
     X = pde_prob.X
-    fx = trapz((pde_prob.x,pde_prob.y),cos.(X) .* P)/p_fak * (D/2) *bearing.b/2;
-    fy = trapz((pde_prob.x,pde_prob.y),sin.(X) .* P)/p_fak * (D/2) *bearing.b/2;
+    fx = trapz((pde_prob.x,pde_prob.y),cos.(X) .* P)/p_fak * (D/2) * bearing.b/2;
+    fy = trapz((pde_prob.x,pde_prob.y),sin.(X) .* P)/p_fak * (D/2) * bearing.b/2;
+
+    if pressure_ret
+        return [fx,fy],P
+    end
 
     return [fx,fy]
 

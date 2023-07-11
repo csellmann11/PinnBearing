@@ -81,8 +81,7 @@ function process_input(prob::DNetPdeProblem,state_vector)
 
     inputs::Vector{Union{Vector{Float32},Float32}}   = [in1,in1,in2,in3,in4,in5,in6, width_in]
 
-    p_fak = λ* bearing.eta * u_m * bearing.rI^2/
-        (bearing.c^2) * bearing.b/2
+    p_fak = λ* bearing.eta * u_m * bearing.rI^2/(bearing.c^2) * bearing.b/2 
 
     return inputs, E, eps_ , Φ, p_fak, alpha_WL
 end
@@ -102,7 +101,7 @@ Calculate the forces acting on the bearing.
 - `fx`: The force in x direction
 - `fy`: The force in y direction
 """
-function forces_dl(prob::DNetPdeProblem,state_vector; Benchmark = false)
+function forces_dl(prob::DNetPdeProblem,state_vector; Benchmark = false, pressure_return = false)
     model, ps, st = prob.model, prob.model_pars, prob. model_state
 
     if Benchmark == false
@@ -120,6 +119,7 @@ function forces_dl(prob::DNetPdeProblem,state_vector; Benchmark = false)
         
     @. prob.pressure = max(prob.pressure/prob.H^2,0) 
 
+
     fx = trapz((prob.x,prob.y),prob.pressure .* prob.cosX) * p_fak
     fy = trapz((prob.x,prob.y),prob.pressure .* prob.sinX) * p_fak
 
@@ -127,5 +127,8 @@ function forces_dl(prob::DNetPdeProblem,state_vector; Benchmark = false)
     F = Rot * [fx;fy]
     fx,fy = F[1],F[2]
 
+    if pressure_return
+        return fx,fy,prob.pressure
+    end
     return fx,fy
 end
