@@ -1,6 +1,6 @@
 module PinnBearing
     using MKL, Lux, Trapz, Plots, LoopVectorization, LinearAlgebra
-    using KLU
+    using KLU, BenchmarkTools
     include("DeepONet/DeepONet.jl")
     include("Physics/Bearing_comp/bearing.jl")
     include("Physics/PDE.jl")

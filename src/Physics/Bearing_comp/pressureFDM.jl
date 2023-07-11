@@ -88,8 +88,17 @@ function bearing_pressure(state_vec,pde_prob::AbstractPdeProblem)
     fillMatrix!(val,row,col, ny, nx, rhs, dx, dy, H, dHdX,dHdY,d2Hdx2, rhs_pde, bearing.alpha);
     A = sparse(row,col,val);
 
-    p_vec = klu(A)\rhs
+    # p_vec = klu(A)\rhs
+    # p_vec = p_vec ./ reshape(H[:,2:end-1],:,1).^2
+
+    if bearing.sysMat_dec === nothing
+        bearing.sysMat_dec = klu(A)
+        println("Decomposition done")
+    end
+
+    p_vec = klu!(bearing.sysMat_dec,A)\rhs
     p_vec = p_vec ./ reshape(H[:,2:end-1],:,1).^2
+
 
     P = zeros(T,nx+1,ny)
     for i ∈ eachindex(p_vec)
@@ -123,13 +132,6 @@ end
 #######################################
 # Version with DL inputs
 #######################################
-
-
-
-
-using SparseArrays, Trapz
-include("fill_mat.jl")
-
 
 """
 _spaltfunc(state_vec,pde_prob::AbstractPdeProblem)
@@ -199,6 +201,8 @@ function _bearing_pressure(state_vec,pde_prob)
     
     fillMatrix!(val,row,col, ny, nx, rhs, dx, dy, H, dHdX,dHdY,d2Hdx2, pde_rhs, bearing.alpha);
     A = sparse(row,col,val);
+
+    
 
     p_vec = klu(A)\rhs
     p_vec = p_vec ./ reshape(H[:,2:end-1],:,1).^2
