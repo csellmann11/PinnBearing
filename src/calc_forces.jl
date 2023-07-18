@@ -120,15 +120,21 @@ function forces_dl(prob::DNetPdeProblem,state_vector; Benchmark = false, pressur
     @. prob.pressure = max(prob.pressure/prob.H^2,0) 
 
 
+    lever = prob.Y * prob.bearing.b/2
     fx = trapz((prob.x,prob.y),prob.pressure .* prob.cosX) * p_fak
     fy = trapz((prob.x,prob.y),prob.pressure .* prob.sinX) * p_fak
+    My = trapz((prob.x,prob.y),prob.pressure .* prob.cosX .* lever) * p_fak
+    Mx = trapz((prob.x,prob.y),prob.pressure .* prob.sinX .* lever) * p_fak
+ 
 
     Rot = [cos(Φ) -sin(Φ); sin(Φ) cos(Φ)]
     F = Rot * [fx;fy]
+    M = Rot * [Mx;My]
     fx,fy = F[1],F[2]
+    Mx,My = M[1],M[2]
 
     if pressure_return
-        return fx,fy,prob.pressure
+        return fx,fy,Mx,My,prob.pressure
     end
-    return fx,fy
+    return fx,fy,Mx,My
 end

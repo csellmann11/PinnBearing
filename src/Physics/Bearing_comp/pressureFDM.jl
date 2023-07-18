@@ -88,9 +88,6 @@ function bearing_pressure(state_vec,pde_prob::AbstractPdeProblem; pressure_ret =
     fillMatrix!(val,row,col, ny, nx, rhs, dx, dy, H, dHdX,dHdY,d2Hdx2, rhs_pde, bearing.alpha);
     A = sparse(row,col,val);
 
-    # p_vec = klu(A)\rhs
-    # p_vec = p_vec ./ reshape(H[:,2:end-1],:,1).^2
-
     if bearing.sysMat_dec === nothing
         bearing.sysMat_dec = klu(A)
         println("Decomposition done")
@@ -119,14 +116,17 @@ function bearing_pressure(state_vec,pde_prob::AbstractPdeProblem; pressure_ret =
     P[nx+1,:] = P[1,:];
 
     X = pde_prob.X
+    lever = pde_prob.Y * bearing.b/2
     fx = trapz((pde_prob.x,pde_prob.y),cos.(X) .* P)/p_fak * (D/2) * bearing.b/2;
     fy = trapz((pde_prob.x,pde_prob.y),sin.(X) .* P)/p_fak * (D/2) * bearing.b/2;
+    My = trapz((pde_prob.x,pde_prob.y),pde_prob.cosX .* P .* lever)/p_fak * (D/2) * bearing.b/2;
+    Mx = trapz((pde_prob.x,pde_prob.y),pde_prob.sinX .* P .* lever)/p_fak * (D/2) * bearing.b/2;
 
     if pressure_ret
-        return [fx,fy],P
+        return [fx,fy,Mx,My],P
     end
 
-    return [fx,fy]
+    return [fx,fy,Mx,My]
 
 end
 
@@ -217,6 +217,7 @@ function _bearing_pressure(state_vec,pde_prob)
             p_vec[i] = 0
         end
     end
+
     for i ∈ 1:nx, j ∈ 1:ny
         if j == 1
             P[i,j] = 0;
@@ -227,10 +228,14 @@ function _bearing_pressure(state_vec,pde_prob)
         end
     end
 
+
     P[nx+1,:] = P[1,:];
 
+    lever = pde_prob.Y * bearing.b/2
     fx = trapz((pde_prob.x,pde_prob.y),pde_prob.cosX .* P)/p_fak * (D/2) * bearing.b/2;
     fy = trapz((pde_prob.x,pde_prob.y),pde_prob.sinX .* P)/p_fak * (D/2) * bearing.b/2;
-    return [fx,fy]
+    My = trapz((pde_prob.x,pde_prob.y),pde_prob.cosX .* P .* lever)/p_fak * (D/2) * bearing.b/2;
+    Mx = trapz((pde_prob.x,pde_prob.y),pde_prob.sinX .* P .* lever)/p_fak * (D/2) * bearing.b/2;
+    return [fx,fy,Mx,My]
 
 end

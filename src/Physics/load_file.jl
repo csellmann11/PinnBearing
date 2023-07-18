@@ -8,9 +8,11 @@ function iterate_named_tuple(ps, path, file, keys_file, keys_ps)
         else
             if keys_ps % 2 == 0
                 value .= file[keys_file[keys_ps-1]]
+                
             else
                 tmp = Array(file[keys_file[keys_ps+1]])
                 value .= tmp'
+                
                 
             end
             keys_ps += 1
