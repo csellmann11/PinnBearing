@@ -64,10 +64,9 @@ function forces_dl_nl(prob::DNetPdeProblem,state_vector; pressure_return = false
     
 
     model(inputs,ps,st)
-
-    #@. prob.H = 1 + E*prob.cosX + eps_ * 1/2 * prob.Y * cos(prob.X - alpha_WL)
     
     prob.pressure .= reshape(model.output,prob.nx,prob.ny) .+ 1
+
 
     fx = trapz((prob.x,prob.y),prob.pressure .* prob.cosX) * p_fak
     fy = trapz((prob.x,prob.y),prob.pressure .* prob.sinX) * p_fak

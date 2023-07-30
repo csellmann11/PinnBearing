@@ -1,7 +1,7 @@
 using LoopVectorization
 using Trapz
 using Statistics
-function calc_press(P, P_new, H, θ, nx, ny, Δx, Δy, Ks, p0, c, e, iter, ω_relax, alpha, diff, Λ_c)
+function calc_press(P, P_new, H, θ, nx, ny, Δx, Δy, Ks, p0, c, e, iter, ω_relax, alpha, diff, Λ_c, y)
     
     e_g = e
     for i in 1:iter
@@ -25,11 +25,28 @@ function calc_press(P, P_new, H, θ, nx, ny, Δx, Δy, Ks, p0, c, e, iter, ω_re
 
                 @inbounds P_new[i,j] = (1- ω_relax) * P[i,j] + ω_relax * (s1 + s2)/(A + B + C + D + E)
 
+                # Hx = (H[mod1(i+1,nx-1),j] - H[mod1(i-1,nx-1),j])/(2*Δx)
+                # Hy = (H[i,j+1] - H[i,j-1])/(2*Δy)
+                # Px = (P[mod1(i+1,nx-1),j] - P[mod1(i-1,nx-1),j])/(2*Δx)
+                # Py = (P[i,j+1] - P[i,j-1])/(2*Δy)
+
+                # A = (H[i,j]^3 * P[i,j]/Δx^2 - H[i,j]^3*Px/(2*Δx) - 3H[i,j]^2*P[i,j]*Hx/(2*Δx) + Λ_c * H[i,j]/(2Δx))
+                # B = (H[i,j]^3 * P[i,j]/Δx^2 + H[i,j]^3*Px/(2*Δx) + 3H[i,j]^2*P[i,j]*Hx/(2*Δx) - Λ_c * H[i,j]/(2Δx))
+
+                # C = alpha*(H[i,j]^3 * P[i,j]/Δy^2 - H[i,j]^3*Py/(2*Δy) - 3H[i,j]^2*P[i,j]*Hy/(2*Δy))
+                # D = alpha*(H[i,j]^3 * P[i,j]/Δy^2 + H[i,j]^3*Py/(2*Δy) + 3H[i,j]^2*P[i,j]*Hy/(2*Δy))
+
+                # E = (2*P[i,j]*H[i,j]^3* (1/Δx^2 + alpha/Δy^2) + Λ_c * Hx)
+
+                # s1 = A * P_new[mod1(i-1,nx-1),j] + B * P[mod1(i+1,nx-1),j] + C * P_new[i,j-1] + D * P[i,j+1]
+                # P_new[i,j] = (1- ω_relax) * P[i,j] + ω_relax * s1/E
+
 
 
             end
             P_row = @view P_new[i,:]
-            mean_pressure = mean(P_row) - 1
+            #mean_pressure = mean(P_row) - 1
+            mean_pressure = trapz(y, P_row) - 1
             @. H[i,:] = 1 .+ e .* cos.(@views θ[i,:]) .+ mean_pressure .* p0 ./ Ks #./ c
 
         end
@@ -41,7 +58,7 @@ function calc_press(P, P_new, H, θ, nx, ny, Δx, Δy, Ks, p0, c, e, iter, ω_re
         diff .= diff ./ P
         rel_error = maximum(diff)
 
-        if abs_error < 1e-7 && rel_error < 1e-7
+        if abs_error < 1e-10 && rel_error < 1e-10
             break
         end
 
@@ -65,7 +82,8 @@ function nonlinear_pressure(state_vec,prob)
     T  = 6 * η * r_I^2/(p0 * c^2);
     alpha = (r_I/b)^2
 
-    nx = 64; ny = 24; 
+    #nx = 64; ny = 24; 
+    nx = prob.nx; ny = prob.ny
 
     xs,ys = state_vec
     e = sqrt(xs^2 + ys^2)/c
@@ -94,16 +112,18 @@ function nonlinear_pressure(state_vec,prob)
     
 
     ω_relax = 0.1
-    iter = 30000
+    iter = 70000
 
-    calc_press(P, P_new, H, θ, nx, ny, Δx, Δy, Ks, p0, c, e, iter, ω_relax, alpha, diff, Λ_c)
+    calc_press(P, P_new, H, θ, nx, ny, Δx, Δy, Ks, p0, c, e, iter, ω_relax, alpha, diff, Λ_c,y)
 
-    pressure = [P; reshape(P[end,:],1,:)]
+    pressure = [P; reshape(P[1,:],1,:)]
 
-    X_full = [X; reshape(X[end,:],1,:)]
+    #X_full = [X; 2pi*ones(1,ny)]
 
-    fx = trapz((x,y),pressure .* cos.(X_full))*b * r_I * p0; 
-    fy = trapz((x,y),pressure .* sin.(X_full))*b * r_I * p0;
+    #display(X_full); display(pressure)
+
+    fx = trapz((x,y),pressure .* cos.(x))*b * r_I * p0; 
+    fy = trapz((x,y),pressure .* sin.(x))*b * r_I * p0;
 
     return fx, fy
 end
