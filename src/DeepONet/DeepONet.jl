@@ -98,14 +98,16 @@ function DeepONet_InferenceEval(net,x,ps::NamedTuple,st)
         net.trunc_output .= net.trunc_network(x[1],ps.trunc_network,st.trunc_network)[1] .* net.distance' # red_dim, n_samples
     end
 
-    branch_outputs = [net.branch_networks[i](x[i+1],ps.branch_networks[i],st.branch_networks[i])[1] for i in 1:net.num_branches]
+    branch_outputs = Array{Array}(undef,net.num_branches)
+    for i in 1:net.num_branches
+        branch_outputs[i] = net.branch_networks[i](x[i+1],ps.branch_networks[i],st.branch_networks[i])[1]
+    end
+
     branch_out = reduce(.*,branch_outputs) # red_dim, batch
 
     T = eltype(branch_out)
     output = Array{T}(undef, size(net.trunc_output,2))
     mymul!(output,net.trunc_output,branch_out)
-
-    #output = net.trunc_output' * branch_out
 
     return output
 end
