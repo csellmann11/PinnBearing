@@ -6,7 +6,7 @@ mutable struct HD_Bearing <: Bearing
     b       :: Float32
     psi     :: Float32
     rI      :: Float32
-    om      :: Real        # om is float or double
+    om      :: Real    # om is either Float or Dual number
     eta     :: Float32
     circ    :: Float32
 

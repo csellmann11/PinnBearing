@@ -59,7 +59,7 @@ function process_input(prob::DNetPdeProblem,state_vector)
     Alpha_WL_dot = alpha_WL_dot * bearing.rI/u_m
 
     eps_max = 2 * (sqrt(1 - E^2*sin(alpha_WL)^2) - E * abs(cos(alpha_WL)))
-    eps_max != zero(typeof(eps_max)) ? D_m = eps_/eps_max : D_m = 0.0 
+    eps_max != zero(typeof(eps_max)) ? D_m = eps_/eps_max : D_m = 0.0f0 
     
     ϕ01 = atan((E * (_Φ-1)),_E)
 
@@ -78,10 +78,11 @@ function process_input(prob::DNetPdeProblem,state_vector)
     
     in1,in2,in3,in4,in5,in6 = [2*E-1], [2*sqrt(_E^2 + (E * (_Φ-1))^2)/λ - 1], ϕ01_in,[2*D_m - 1],alpha_WL_in,ϕ23_in
 
-    λ == zero(typeof(λ)) ? in2 = [0.0] : nothing
+    λ == zero(typeof(λ)) ? in2 = [0.0f0] : nothing
     width = bearing.B; width_in = [2/3 * (width - 2.5)] .|> Float32
 
     inputs::Vector = [in1,in1,in2,in3,in4,in5,in6, width_in]
+
 
     p_fak = λ* bearing.eta * u_m * bearing.rI^2/(bearing.c^2) * bearing.b/2 
 
@@ -108,30 +109,35 @@ function forces_dl(prob::DNetPdeProblem,state_vector; Benchmark = false, pressur
 
     if parallel 
         null = zero(eltype(state_vector))
-        sv = state_vector
-        state_vector = [sv[1],sv[2],sv[3],sv[4],null,null,null+eps(),null+eps()]
+        state_vector = [state_vector...,null,null,null+eps(Float32),null+eps(Float32)]
+
     end
 
     if Benchmark == false
-        inputs, E,eps_, Φ, p_fak , alpha_WL = process_input(prob,state_vector)
+         inputs, E,eps_, Φ, p_fak , alpha_WL = process_input(prob,state_vector)
     else
         inputs, E,eps_, Φ, p_fak , alpha_WL = _process_input(prob,state_vector)
     end
 
     net_out = model(inputs,ps,st)
 
+    H = @. 1 + E*prob.cosX 
     
-    H = @. 1 + E*prob.cosX + eps_ * 1/2 * prob.Y * cos(prob.X - alpha_WL)
+    if eps_ != zero(typeof(eps_))
+        H += eps_ * 1/2 * prob.Y * cos(prob.X - alpha_WL)
+    end
     pressure = reshape(net_out,prob.nx,prob.ny)./H.^2	
 
     pressure[pressure .< 0] .= 0
 
     lever = prob.Y * prob.bearing.b/2
 
-    fx = trapz((prob.x,prob.y),pressure .* prob.cosX) * p_fak
-    fy = trapz((prob.x,prob.y),pressure .* prob.sinX) * p_fak
-    My = trapz((prob.x,prob.y),pressure .* prob.cosX .* lever) * p_fak
-    Mx = trapz((prob.x,prob.y),pressure .* prob.sinX .* lever) * p_fak
+    p_cos_x = pressure .* prob.cosX
+    p_sin_x = pressure .* prob.sinX
+    fx = trapz((prob.x,prob.y),p_cos_x) * p_fak
+    fy = trapz((prob.x,prob.y),p_sin_x) * p_fak
+    My = trapz((prob.x,prob.y),p_cos_x .* lever) * p_fak
+    Mx = trapz((prob.x,prob.y),p_sin_x .* lever) * p_fak
 
     Rot = [cos(Φ) -sin(Φ); sin(Φ) cos(Φ)]
     F = Rot * [fx;fy]
