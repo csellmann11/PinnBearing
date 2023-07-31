@@ -34,7 +34,8 @@ function spaltfunc(state_vec,pde_prob::AbstractPdeProblem)
     dHdY::Matrix{Float64} = @. eps_ * cos(Θ - alpha_WL)# 1/2 is missing because the true y is in (0,B)
     d2HdX2::Matrix{Float64} = @. - E * cos.(Θ) - 1/2 * eps_ * pde_prob.Y .* cos(Θ - alpha_WL)
 
-    HD ::Matrix{Float64} = @. E_ * cos.(Θ) + E * phi_ * sin.(Θ) + 1/2 * eps_dot * pde_prob.Y .* cos(Θ - alpha_WL) + 1/2 * eps_ * pde_prob.Y .* alpha_WL_dot .* sin.(Θ - alpha_WL)
+    HD ::Matrix{Float64} = @. E_ * cos.(Θ) + E * phi_ * sin.(Θ) + 1/2 * eps_dot * pde_prob.Y .* cos(Θ - alpha_WL) + 
+            1/2 * eps_ * pde_prob.Y .* alpha_WL_dot .* sin.(Θ - alpha_WL)
 
     HD = HD * bearing.d/2 * 1/um
     return H[1:end-1,:],HD[1:end-1,:],dHdX[1:end-1,:],dHdY[1:end-1,:],d2HdX2[1:end-1,:]
@@ -55,7 +56,7 @@ Calculate the forces in the bearing with FDM.
 - `fx`: The force in x-direction
 - `fy`: The force in y-direction
 """
-function bearing_pressure(state_vec,pde_prob::AbstractPdeProblem; pressure_ret = false)
+function bearing_pressure(state_vec,pde_prob::AbstractPdeProblem; return_pressure = false, parallel = false)
 
     T = Float64
     bearing = pde_prob.bearing
@@ -72,6 +73,11 @@ function bearing_pressure(state_vec,pde_prob::AbstractPdeProblem; pressure_ret =
     dy ::Float64 = pde_prob.dy
 
     um = D/4 * om
+
+    if parallel
+        null = zero(T)
+        state_vec = [state_vec...,null,null,null,null]
+    end
 
     H,HD,dHdX,dHdY,d2Hdx2 = spaltfunc(state_vec,pde_prob)
     p_fak = C^2/(eta * abs(um) * D/2)
@@ -122,7 +128,7 @@ function bearing_pressure(state_vec,pde_prob::AbstractPdeProblem; pressure_ret =
     My = trapz((pde_prob.x,pde_prob.y),pde_prob.cosX .* P .* lever)/p_fak * (D/2) * bearing.b/2;
     Mx = trapz((pde_prob.x,pde_prob.y),pde_prob.sinX .* P .* lever)/p_fak * (D/2) * bearing.b/2;
 
-    if pressure_ret
+    if return_pressure
         return [fx,fy,Mx,My],P
     end
 

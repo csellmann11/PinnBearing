@@ -10,7 +10,7 @@ module PinnBearing
     include("Physics/Bearing_comp/pressureSOR.jl")
 
     export HD_Bearing_Pfeil, HD_Bearing, HD_Bearing_Schweizer, Foil_Bearing_Leister
-    export DNetPdeProblem, PdeProb, forces_dl
+    export DNetPdeProblem, PdeProb, forces_dl,DNetPdeProblem_nl, forces_dl_nl
     export DeepONet, FFCN
     export bearing_pressure
 end 
