@@ -16,6 +16,14 @@ function mymul!(out::Vector{Float32},mat::Matrix{Float32},vec::Vector{Float32})
     end
 end
 
+function mymul!(out::Vector{T},mat::Matrix{Float32},vec::Vector{T}) where {T <: Real}
+    """
+    Multiplication of the transposed a matrix with a vector and store the result in a vector.
+    u[i] = A[j,i] * v[j]
+    """
+    mul!(out,mat',vec)
+end
+
 ########################
 # Structure Definition #
 ########################
@@ -34,7 +42,6 @@ struct DeepONet{B<:NamedTuple,T<:FFCN} <: Lux.AbstractExplicitContainerLayer{(:b
 
     trunc_output::Array{Float32}
     distance::Array{Float32}
-    output::Array{Float32}
 
     num_branches::Int
 
@@ -57,9 +64,8 @@ function DeepONet(branch_networks_info,trunc_network_info,y_data)
 
     reduced_dim = trunc_network_info[2]; len_data = length(y_data)
     trunc_output = Array{Float32}(undef, reduced_dim, len_data)
-    output = Array{Float32}(undef, len_data)
 
-    return DeepONet(NamedTuple(branch_nets),trunc_net,trunc_output,distance,output, n_branches, Flags())
+    return DeepONet(NamedTuple(branch_nets),trunc_net,trunc_output,distance,n_branches, Flags())
 end
 
 ######################
@@ -95,15 +101,21 @@ function DeepONet_InferenceEval(net,x,ps::NamedTuple,st)
     branch_outputs = [net.branch_networks[i](x[i+1],ps.branch_networks[i],st.branch_networks[i])[1] for i in 1:net.num_branches]
     branch_out = reduce(.*,branch_outputs) # red_dim, batch
 
-    mymul!(net.output,net.trunc_output,branch_out)
+    T = eltype(branch_out)
+    output = Array{T}(undef, size(net.trunc_output,2))
+    mymul!(output,net.trunc_output,branch_out)
+
+    #output = net.trunc_output' * branch_out
+
+    return output
 end
 
 function (net::DeepONet)(x, ps::NamedTuple,st)
     if net.flags.training
         return DeepONet_Train(net,x,ps,st)
     else
-        DeepONet_InferenceEval(net,x,ps,st) # net.output is changed
-        return 0
+        output = DeepONet_InferenceEval(net,x,ps,st) 
+        return output
     end
 end
 
