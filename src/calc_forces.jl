@@ -41,7 +41,7 @@ end
 function process_input(prob::DNetPdeProblem,state_vector)
     bearing = prob.bearing
 
-    ω = bearing.om |> Float32
+    ω = bearing.om 
     
     xs,ys,dxs,dys,alpha_WL,eps_,eps_dot,alpha_WL_dot = state_vector 
     u_m = bearing.rI * ω/2
