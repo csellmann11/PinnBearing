@@ -10,7 +10,7 @@ Use `process_input` instead.
 function _process_input(prob::DNetPdeProblem,state_vector)
     bearing = prob.bearing
 
-    ω = bearing.om |> Float32
+    ω = bearing.om 
     
     E,A1,ϕ01,D_m,alpha_WL,ϕ23 = state_vector .|> Float32
     u_m = bearing.rI * ω/2
