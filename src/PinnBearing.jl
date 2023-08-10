@@ -13,6 +13,7 @@ module PinnBearing
     include("DeepONet/DeepONet.jl")
     include("Physics/Bearing_comp/bearing.jl")
     include("Physics/PDE.jl")
+    include("utils_force.jl")
     include("calc_forces.jl")
     include("calc_forces_nonlinear.jl")
     include("Physics/Bearing_comp/pressureFDM.jl")
