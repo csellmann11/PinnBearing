@@ -14,11 +14,9 @@ struct DNetPdeProblem <: AbstractDNetPdeProblem
     y :: Array{Float32}
     X :: Array{Float32}
     Y :: Array{Float32}
-    #H :: Array{Float32}
     
     cosX    :: Array{Float32}
     sinX    :: Array{Float32}
-    # pressure  :: Array{Float32}
 
     bearing  :: Bearing
     
@@ -74,7 +72,7 @@ function DNetPdeProblem(nx::Int,ny::Int,bearing::HD_Bearing,arc_vec,
     DNetPdeProblem(nx,ny,dx,dy,x,y,X,Y,cosX,sinX,bearing,model,ps,st)
 end
 
-function DNetPdeProblem_nl(nx::Int,ny::Int,bearing::Foil_Bearing,arc_vec,
+function DNetPdeProblem(nx::Int,ny::Int,bearing::Foil_Bearing,arc_vec,
     params_file; misa = false)
     dx :: Float32 = 2pi/(nx-1)
     dy :: Float32 = 1/(ny-1)
@@ -86,7 +84,6 @@ function DNetPdeProblem_nl(nx::Int,ny::Int,bearing::Foil_Bearing,arc_vec,
     Y = [yv for _ in x, yv in y]
 
 
-    #H, pressure = similar(X), similar(X)
     cosX = cos.(X); sinX = sin.(X)
 
 

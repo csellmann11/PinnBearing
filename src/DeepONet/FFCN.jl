@@ -43,13 +43,15 @@ function (net::FFCN)(x, ps::NamedTuple,st)
 
     for (idx,layer) in enumerate(net.layers)
         if idx != length(net.layers)
-            x = layer(x, ps.layers[idx], st.layers[idx])[1]
-            x = x .* pre_faktor
-            
+            x = layer(x, ps.layers[idx], st.layers[idx])[1] .* pre_faktor
         else
             x = layer(x, ps.layers[idx], st.layers[idx])[1]
         end
     end
+
+   
+
+
 
     return x, st
 end 

@@ -1,4 +1,4 @@
-include("PinnBearing.jl")
+include("../src/PinnBearing.jl")
 using  Statistics, BenchmarkTools
 using .PinnBearing 
 using Plots
@@ -21,12 +21,12 @@ for i in eachindex(grid)
 
 
     state_vec = [1.9f0 * bearing.c,0]
-    fx,fy = PinnBearing.forces_dl_nl(prob,state_vec)
+    fx,fy,_,_ = PinnBearing.forces_dl_nl(prob,state_vec)
     f = sqrt(fx^2 + fy^2)
 
     println("fx: ",fx," fy: ",fy)
 
-    fx2,fy2 = PinnBearing.nonlinear_pressure(state_vec,prob)
+    fx2,fy2,_,_ = PinnBearing.nonlinear_bearing_pressure(state_vec,prob)
     f2 = sqrt(fx2^2 + fy2^2)
     println("fx2: ",fx2," fy2: ",fy2)
 
@@ -60,18 +60,6 @@ ylabelfontsize = 15)
 display(plot!())
 
 savefig(p,"convergeny_SOR.pdf")
-
-
-# plot!(x, dl_upper, label="", color=:red)
-# plot!(x, dl_lower, color=:red)
-# plot!(x, dl_upper, fill=(x, dl_lower), fillalpha=0.2, fillcolor=:red, label="DL ±1%")
-
-
-
-
-
-
-
 
 
 nothing

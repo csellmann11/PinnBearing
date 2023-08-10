@@ -1,6 +1,33 @@
+"""
+    fillMatrix!(val, row, col, ny, nx, F, dx, dy, H, dHdX, dHdY, d2Hdx2, rhs_pde, alpha)
+
+Fill the matrix values, rows, and columns for a finite difference discretization of a PDE.
+
+# Arguments
+- `val`: Array to store the non-zero values of the matrix.
+- `row`: Array to store the row indices of the non-zero values.
+- `col`: Array to store the column indices of the non-zero values.
+- `ny`: Number of grid points in the y-direction.
+- `nx`: Number of grid points in the x-direction.
+- `F`: Right-hand side of the PDE.
+- `dx`: Grid spacing in the x-direction.
+- `dy`: Grid spacing in the y-direction.
+- `H`: Array representing the clearance hight.
+- `dHdX`: Array representing the x-derivative of the field `H`.
+- `dHdY`: Array representing the y-derivative of the field `H`.
+- `d2Hdx2`: Array representing the second x-derivative of the field `H`.
+- `rhs_pde`: Right-hand side values of the PDE at each grid point.
+- `alpha`: (rI/B)^2, scaled bearing radius squared divided by the bearing width squared.
+
+# Description
+This function fills the `val`, `row`, and `col` arrays based on the finite difference discretization 
+of a given PDE. The function uses a loop over the grid points and computes the matrix entries 
+based on the provided field values and their derivatives.
+
+# Returns
+The function modifies the `val`, `row`, `col`, and `F` arrays in-place.
+"""
 function fillMatrix!(val,row,col, ny, nx, F, dx, dy, H, dHdX, dHdY, d2Hdx2, rhs_pde, alpha)
-
-
     index = 0;
     for j ∈ 2:(ny-1), i ∈ 1:nx
 

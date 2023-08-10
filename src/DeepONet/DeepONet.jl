@@ -2,7 +2,7 @@ using Lux, Random
 
 include("FFCN.jl")
 
-function mymul!(out::Vector{Float32},mat::Matrix{Float32},vec::Vector{Float32})
+function mymul_trans!(out::Vector{Float32},mat::Matrix{Float32},vec::Vector{Float32})
     """
     Multiplication of the transposed a matrix with a vector and store the result in a vector.
     u[i] = A[j,i] * v[j]
@@ -16,7 +16,7 @@ function mymul!(out::Vector{Float32},mat::Matrix{Float32},vec::Vector{Float32})
     end
 end
 
-function mymul!(out::Vector{T},mat::Matrix{Float32},vec::Vector{T}) where {T <: Real}
+function mymul_trans!(out::Vector{T},mat::Matrix{Float32},vec::Vector{T}) where {T <: Real}
     """
     Multiplication of the transposed a matrix with a vector and store the result in a vector.
     u[i] = A[j,i] * v[j]
@@ -98,16 +98,13 @@ function DeepONet_InferenceEval(net,x,ps::NamedTuple,st)
         net.trunc_output .= net.trunc_network(x[1],ps.trunc_network,st.trunc_network)[1] .* net.distance' # red_dim, n_samples
     end
 
-    branch_outputs = Array{Array}(undef,net.num_branches)
-    for i in 1:net.num_branches
-        branch_outputs[i] = net.branch_networks[i](x[i+1],ps.branch_networks[i],st.branch_networks[i])[1]
-    end
-
-    branch_out = reduce(.*,branch_outputs) # red_dim, batch
+    branch_out = reduce(.*,
+            [net.branch_networks[i](x[i+1],ps.branch_networks[i],st.branch_networks[i])[1] 
+            for i in 1:net.num_branches])
 
     T = eltype(branch_out)
     output = Array{T}(undef, size(net.trunc_output,2))
-    mymul!(output,net.trunc_output,branch_out)
+    mymul_trans!(output,net.trunc_output,branch_out)
 
     return output
 end

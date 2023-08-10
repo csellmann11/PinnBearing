@@ -45,14 +45,12 @@ function calc_press(P, P_new, H, θ, nx, ny, Δx, Δy, Ks, p0, c, e, iter, ω_re
 
             end
             P_row = @view P_new[i,:]
-            #mean_pressure = mean(P_row) - 1
             mean_pressure = trapz(y, P_row) - 1
             @. H[i,:] = 1 .+ e .* cos.(@views θ[i,:]) .+ mean_pressure .* p0 ./ Ks #./ c
 
         end
         
-        @. diff .= P - P_new
-        diff .= abs.(diff)
+        @. diff .= abs(P - P_new)
    
         abs_error = maximum(diff)
         diff .= diff ./ P
@@ -72,17 +70,16 @@ function calc_press(P, P_new, H, θ, nx, ny, Δx, Δy, Ks, p0, c, e, iter, ω_re
     end
 end
 
-function nonlinear_pressure(state_vec,prob)
+function nonlinear_bearing_pressure(state_vec::Vector{T},prob::DNetPdeProblem) where T <: Real
     bearing = prob.bearing
 
     η = bearing.eta; ω = bearing.om; r_I = bearing.rI; b = bearing.b
     c = bearing.c; um = 1/2 * ω * r_I; p0 = bearing.p_atm
 
     Λ_c = 6 * η * ω * r_I^2/(p0 * c^2); 
-    T  = 6 * η * r_I^2/(p0 * c^2);
+    #T  = 6 * η * r_I^2/(p0 * c^2);
     alpha = (r_I/b)^2
 
-    #nx = 64; ny = 24; 
     nx = prob.nx; ny = prob.ny
 
     xs,ys = state_vec
@@ -111,20 +108,22 @@ function nonlinear_pressure(state_vec,prob)
     Ks = bearing.Ksc
     
 
-    ω_relax = 0.1
+    ω_relax = 0.2
     iter = 70000
 
     calc_press(P, P_new, H, θ, nx, ny, Δx, Δy, Ks, p0, c, e, iter, ω_relax, alpha, diff, Λ_c,y)
 
     pressure = [P; reshape(P[1,:],1,:)]
 
-    #X_full = [X; 2pi*ones(1,ny)]
+    display(surface(pressure))
 
-    #display(X_full); display(pressure)
+    lever = 0.5*y' .- 1
 
     fx = trapz((x,y),pressure .* cos.(x))*b * r_I * p0; 
     fy = trapz((x,y),pressure .* sin.(x))*b * r_I * p0;
+    Mx = trapz((x,y),pressure .* sin.(x) .* lever)*b * r_I * p0;
+    My = trapz((x,y),pressure .* cos.(x) .* lever)*b * r_I * p0;
 
-    return fx, fy
+    return fx, fy, Mx, My
 end
 
