@@ -6,7 +6,7 @@
 Use `process_input` instead.
 
 """
-function _process_input(prob::DNetPdeProblem,state_vector)
+function _process_input_bench(prob::DNetPdeProblem,state_vector)
     bearing = prob.bearing
 
     ω = bearing.om 

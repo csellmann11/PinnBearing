@@ -117,20 +117,6 @@ function bearing_pressure(state_vec::Vector{Float64},pde_prob::AbstractPdeProble
         println("Decomposition done")
     end
 
-    try
-        cholesky(A)
-        println("Matrix is positive definite")
-    catch 
-        try 
-            B = -A
-            cholesky(B)
-            println("Matrix is positive definite")
-        catch
-            println("Matrix is not positive definite")
-        end
-    end
-
-
     p_vec = klu!(bearing.sysMat_dec,A)\rhs
     p_vec = p_vec ./ reshape(H[:,2:end-1],:,1).^2
 
